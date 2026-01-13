@@ -1,36 +1,88 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Floems
+
+A mindfulness and poetry web app for capturing daily moments and compiling them into beautiful, interactive flip-book style digital poetry collections.
+
+## Overview
+
+Floems helps you practice deliberate attention by noticing and documenting brief observations throughout the month. At month's end, curate your moments into a personalized "Floem" (Flip book poem) with themes, arrangement, and scene descriptions.
+
+## Features
+
+- **Daily Capture** - Guided prompts or self-directed observations (max 280 characters)
+- **30-Second Breathing Exercise** - Animated mindfulness timer before writing
+- **Monthly Calendar View** - Visual indicators for days with captured moments
+- **Floem Creation Wizard** - 5-step process: select → arrange → theme → scenes → preview
+- **Interactive Flip Book** - 3D page-flip animations with auto-advance
+- **Three Visual Themes** - Minimal Light, Dark Poetry, Winter Pale
+- **PWA Ready** - Works offline, installable on mobile devices
+- **Privacy First** - All data stored locally in browser (no server required)
+
+## Tech Stack
+
+- Next.js 16
+- React 19
+- TypeScript
+- Framer Motion (animations)
+- Tailwind CSS 4
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js (v18+)
+- npm
+
+### Installation
+
+```bash
+cd floems
+npm install
+```
+
+### Development
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Production Build
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+floems/
+├── app/                    # Next.js App Router pages
+│   ├── page.tsx           # Home dashboard
+│   ├── capture/           # Moment capture flow
+│   ├── review/            # Review captured moments
+│   ├── create/            # Floem creation wizard
+│   └── view/[id]/         # View completed Floems
+├── components/            # React components
+│   ├── BreathingCircle    # Animated breathing timer
+│   ├── Calendar           # Monthly calendar view
+│   ├── FlipBook           # 3D flip-book viewer
+│   └── ...
+├── lib/                   # Utilities
+│   ├── storage.ts         # localStorage operations
+│   ├── prompts.ts         # Guided prompts
+│   └── themes.ts          # Visual themes
+└── types/                 # TypeScript definitions
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## How It Works
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. **Capture** - Each day, receive a prompt or notice something yourself. Write a brief observation.
+2. **Review** - Browse your month's moments, toggle which to include in your Floem.
+3. **Create** - Select 5-15 moments, arrange them, pick a theme, add scene descriptions.
+4. **View** - Watch your Floem as an animated flip-book or read linearly.
 
-## Deploy on Vercel
+## Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Configured for Vercel deployment. Push to your repository and connect to Vercel for automatic deploys.

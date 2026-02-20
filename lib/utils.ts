@@ -98,6 +98,19 @@ export function parsePoem(text: string): string[] {
   return text.split('\n').filter(line => line.trim());
 }
 
+// Get adjacent months
+export function getPrevMonth(month: string): string {
+  const [year, monthNum] = month.split('-').map(Number);
+  const date = new Date(year, monthNum - 2); // monthNum-1 is current, monthNum-2 is prev
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+export function getNextMonth(month: string): string {
+  const [year, monthNum] = month.split('-').map(Number);
+  const date = new Date(year, monthNum); // monthNum-1 is current, monthNum is next
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
 // Shuffle array (for randomizing prompts)
 export function shuffle<T>(array: T[]): T[] {
   const shuffled = [...array];

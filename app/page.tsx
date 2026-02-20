@@ -6,32 +6,40 @@ import { motion } from 'framer-motion';
 import Calendar from '@/components/Calendar';
 import MomentCard from '@/components/MomentCard';
 import { Moment } from '@/types';
-import { getMomentsForCurrentMonth, getStats } from '@/lib/storage';
+import { getMoments, getStats } from '@/lib/storage';
 import { getCheckIn } from '@/lib/prompts';
 import {
   formatMonthYear,
   getCurrentMonth,
   getDayOfMonth,
   getDaysRemaining,
+  getPrevMonth,
+  getNextMonth,
 } from '@/lib/utils';
 
 export default function Home() {
   const [moments, setMoments] = useState<Moment[]>([]);
   const [stats, setStats] = useState({ totalCaptured: 0, selfNoticed: 0, prompted: 0, skipped: 0 });
   const [mounted, setMounted] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
 
   const currentMonth = getCurrentMonth();
+  const isCurrentMonth = selectedMonth === currentMonth;
   const dayOfMonth = getDayOfMonth();
   const daysRemaining = getDaysRemaining();
   const checkIn = getCheckIn(dayOfMonth);
 
   useEffect(() => {
     setMounted(true);
-    setMoments(getMomentsForCurrentMonth());
     setStats(getStats());
   }, []);
 
-  // Don't render until mounted (avoid hydration mismatch with localStorage)
+  useEffect(() => {
+    if (mounted) {
+      setMoments(getMoments(selectedMonth));
+    }
+  }, [mounted, selectedMonth]);
+
   if (!mounted) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -40,7 +48,8 @@ export default function Home() {
     );
   }
 
-  const canCreateFloem = dayOfMonth >= 28 || moments.length >= 8;
+  // For past months the month is over, so always eligible; for current month use day-based logic
+  const canCreateFloem = !isCurrentMonth || dayOfMonth >= 28 || moments.length >= 8;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -53,18 +62,42 @@ export default function Home() {
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-        {/* Month header */}
+        {/* Month header with navigation */}
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-medium text-gray-700">
-            {formatMonthYear(currentMonth)}
-          </h2>
-          <span className="text-sm text-gray-400">
-            {daysRemaining} days remaining
-          </span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSelectedMonth(getPrevMonth(selectedMonth))}
+              className="p-1 text-gray-400 hover:text-gray-700 transition-colors"
+              aria-label="Previous month"
+            >
+              &#8592;
+            </button>
+            <h2 className="text-lg font-medium text-gray-700">
+              {formatMonthYear(selectedMonth)}
+            </h2>
+            <button
+              onClick={() => setSelectedMonth(getNextMonth(selectedMonth))}
+              disabled={isCurrentMonth}
+              className="p-1 text-gray-400 hover:text-gray-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              aria-label="Next month"
+            >
+              &#8594;
+            </button>
+          </div>
+          {isCurrentMonth ? (
+            <span className="text-sm text-gray-400">{daysRemaining} days remaining</span>
+          ) : (
+            <button
+              onClick={() => setSelectedMonth(currentMonth)}
+              className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              Back to today
+            </button>
+          )}
         </div>
 
-        {/* Check-in message */}
-        {checkIn && (
+        {/* Check-in message (current month only) */}
+        {isCurrentMonth && checkIn && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -100,17 +133,19 @@ export default function Home() {
 
         {/* Action buttons */}
         <div className="flex gap-3">
-          <Link
-            href="/capture"
-            className="flex-1 py-3 bg-gray-800 text-white rounded-full text-center font-medium hover:bg-gray-700 transition-colors"
-          >
-            Capture a moment
-          </Link>
+          {isCurrentMonth && (
+            <Link
+              href="/capture"
+              className="flex-1 py-3 bg-gray-800 text-white rounded-full text-center font-medium hover:bg-gray-700 transition-colors"
+            >
+              Capture a moment
+            </Link>
+          )}
 
           {moments.length > 0 && (
             <Link
-              href="/review"
-              className="py-3 px-6 bg-white border border-gray-200 text-gray-700 rounded-full text-center font-medium hover:bg-gray-50 transition-colors"
+              href={`/review?month=${selectedMonth}`}
+              className="flex-1 py-3 px-6 bg-white border border-gray-200 text-gray-700 rounded-full text-center font-medium hover:bg-gray-50 transition-colors"
             >
               Review
             </Link>
@@ -124,10 +159,10 @@ export default function Home() {
             animate={{ opacity: 1, scale: 1 }}
           >
             <Link
-              href="/create"
+              href={`/create?month=${selectedMonth}`}
               className="block w-full py-4 bg-gradient-to-r from-gray-700 to-gray-900 text-white rounded-xl text-center font-medium hover:from-gray-600 hover:to-gray-800 transition-all shadow-lg"
             >
-              Create your {formatMonthYear(currentMonth).split(' ')[0]} Floem
+              Create your {formatMonthYear(selectedMonth).split(' ')[0]} Floem
             </Link>
           </motion.div>
         )}
@@ -152,11 +187,13 @@ export default function Home() {
         {moments.length === 0 && (
           <div className="text-center py-12">
             <p className="text-gray-400 font-serif italic mb-4">
-              No moments captured yet this month.
+              No moments captured yet {isCurrentMonth ? 'this month' : `in ${formatMonthYear(selectedMonth)}`}.
             </p>
-            <p className="text-gray-500 text-sm">
-              Tap "Capture a moment" to begin noticing.
-            </p>
+            {isCurrentMonth && (
+              <p className="text-gray-500 text-sm">
+                Tap "Capture a moment" to begin noticing.
+              </p>
+            )}
           </div>
         )}
       </main>

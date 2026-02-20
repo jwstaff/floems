@@ -1,23 +1,26 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import MomentCard from '@/components/MomentCard';
 import { Moment } from '@/types';
-import { getMomentsForCurrentMonth, updateMoment } from '@/lib/storage';
+import { getMoments, updateMoment } from '@/lib/storage';
 import { formatMonthYear, getCurrentMonth } from '@/lib/utils';
 
-export default function ReviewPage() {
+function ReviewContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const month = searchParams.get('month') || getCurrentMonth();
+
   const [moments, setMoments] = useState<Moment[]>([]);
   const [mounted, setMounted] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
-    setMoments(getMomentsForCurrentMonth().slice().reverse());
-  }, []);
+    setMoments(getMoments(month).slice().reverse());
+  }, [month]);
 
   const handleToggleInclude = (id: string, included: boolean) => {
     updateMoment(id, { includeInFloem: included });
@@ -48,7 +51,7 @@ export default function ReviewPage() {
             &larr; Back
           </button>
           <h1 className="font-medium text-gray-800">Review Moments</h1>
-          <div className="w-12" /> {/* Spacer for alignment */}
+          <div className="w-12" />
         </div>
       </header>
 
@@ -56,7 +59,7 @@ export default function ReviewPage() {
         {/* Month and count */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg text-gray-700">
-            {formatMonthYear(getCurrentMonth())}
+            {formatMonthYear(month)}
           </h2>
           <span className="text-sm text-gray-500">
             {includedCount} of {moments.length} included
@@ -79,7 +82,6 @@ export default function ReviewPage() {
               transition={{ delay: index * 0.05 }}
             >
               {expandedId === moment.id ? (
-                // Expanded view
                 <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex-1">
@@ -127,7 +129,6 @@ export default function ReviewPage() {
                   </button>
                 </div>
               ) : (
-                // Collapsed view
                 <MomentCard
                   moment={moment}
                   onClick={() => setExpandedId(moment.id)}
@@ -151,5 +152,17 @@ export default function ReviewPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function ReviewPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-pulse text-gray-400">Loading...</div>
+      </div>
+    }>
+      <ReviewContent />
+    </Suspense>
   );
 }

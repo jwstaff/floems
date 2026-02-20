@@ -1,18 +1,21 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, useCallback, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import ProgressBar from '@/components/ProgressBar';
 import ThemePreview from '@/components/ThemePreview';
 import { Moment, Theme, CompilationStep } from '@/types';
-import { getMomentsForCurrentMonth, saveFloem } from '@/lib/storage';
+import { getMoments, saveFloem } from '@/lib/storage';
 import { themes, getDefaultTheme } from '@/lib/themes';
 import { compilationGuidance, completionMessage } from '@/lib/prompts';
 import { formatMonthYear, getCurrentMonth, formatDate } from '@/lib/utils';
 
-export default function CreatePage() {
+function CreateContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const month = searchParams.get('month') || getCurrentMonth();
+
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<CompilationStep>('selection');
   const [allMoments, setAllMoments] = useState<Moment[]>([]);
@@ -21,15 +24,12 @@ export default function CreatePage() {
   const [scenes, setScenes] = useState<Record<string, string>>({});
   const [isComplete, setIsComplete] = useState(false);
 
-  const currentMonth = getCurrentMonth();
-
   useEffect(() => {
     setMounted(true);
-    const moments = getMomentsForCurrentMonth();
+    const moments = getMoments(month);
     setAllMoments(moments);
-    // Pre-select moments marked for inclusion
     setSelectedMoments(moments.filter((m) => m.includeInFloem));
-  }, []);
+  }, [month]);
 
   const handleToggleSelect = (moment: Moment) => {
     setSelectedMoments((prev) => {
@@ -63,16 +63,14 @@ export default function CreatePage() {
   };
 
   const handlePublish = useCallback(() => {
-    // Apply scenes to moments
     const momentsWithScenes = selectedMoments.map((m) => ({
       ...m,
       location: scenes[m.id] || m.location,
     }));
 
-    // Save the Floem
     saveFloem({
-      month: currentMonth,
-      title: formatMonthYear(currentMonth),
+      month,
+      title: formatMonthYear(month),
       moments: momentsWithScenes,
       theme: selectedTheme,
       stats: {
@@ -84,7 +82,7 @@ export default function CreatePage() {
     });
 
     setIsComplete(true);
-  }, [selectedMoments, scenes, selectedTheme, currentMonth]);
+  }, [selectedMoments, scenes, selectedTheme, month]);
 
   const getSelectionGuidance = () => {
     const count = selectedMoments.length;
@@ -152,7 +150,7 @@ export default function CreatePage() {
 
           <div className="space-y-3">
             <button
-              onClick={() => router.push(`/view/floem_${currentMonth}`)}
+              onClick={() => router.push(`/view/floem_${month}`)}
               className="w-full py-3 bg-gray-800 text-white rounded-full font-medium hover:bg-gray-700 transition-colors"
             >
               View your Floem
@@ -182,7 +180,7 @@ export default function CreatePage() {
               &larr; {step === 'selection' ? 'Cancel' : 'Back'}
             </button>
             <h1 className="font-medium text-gray-800">
-              Create {formatMonthYear(currentMonth).split(' ')[0]} Floem
+              Create {formatMonthYear(month).split(' ')[0]} Floem
             </h1>
             <div className="w-12" />
           </div>
@@ -387,7 +385,7 @@ export default function CreatePage() {
                   fontFamily: selectedTheme.font,
                 }}
               >
-                {selectedMoments.slice(0, 3).map((moment, index) => (
+                {selectedMoments.slice(0, 3).map((moment) => (
                   <div
                     key={moment.id}
                     className="p-6 border-b"
@@ -452,11 +450,23 @@ export default function CreatePage() {
               onClick={handlePublish}
               className="flex-1 py-3 bg-gray-800 text-white rounded-full font-medium hover:bg-gray-700 transition-colors"
             >
-              This is my {formatMonthYear(currentMonth).split(' ')[0]} →
+              This is my {formatMonthYear(month).split(' ')[0]} →
             </button>
           )}
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function CreatePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-pulse text-gray-400">Loading...</div>
+      </div>
+    }>
+      <CreateContent />
+    </Suspense>
   );
 }
